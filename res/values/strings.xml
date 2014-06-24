@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OnlineGallery</string>
+    <string name="userNameHint">Username:</string>
+    <string name="passwordHint">Password:</string>
+    <string name="login">Login</string>
+    <string name="signup">Signup</string>
+    <string name="scan">Scan And Upload</string>
+    <string name="viewPhotos">View Photos</string>
+    <string name="openScanner">Open Scanner</string>
+    <string name="logout">Logout</string>
+</resources>
