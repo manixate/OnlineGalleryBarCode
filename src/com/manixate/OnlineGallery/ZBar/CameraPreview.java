@@ -5,19 +5,15 @@
  */
 package com.manixate.OnlineGallery.ZBar;
 
-import java.io.IOException;
-
-import android.util.Log;
-
-import android.view.SurfaceView;
-import android.view.SurfaceHolder;
-
 import android.content.Context;
-
 import android.hardware.Camera;
-import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.AutoFocusCallback;
-import android.hardware.Camera.Parameters;
+import android.hardware.Camera.PreviewCallback;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+import java.io.IOException;
 
 /** A basic Camera preview class */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
@@ -35,16 +31,16 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         autoFocusCallback = autoFocusCb;
 
 
-        Camera.Parameters parameters = camera.getParameters();
-        for (String f : parameters.getSupportedFocusModes()) {
-            if (f.equals(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-                parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-                autoFocusCallback = null;
-                break;
-            }
-        }
-
-        camera.setParameters(parameters);
+//        Camera.Parameters parameters = camera.getParameters();
+//        for (String f : parameters.getSupportedFocusModes()) {
+//            if (f.equals(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+//                parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+//                autoFocusCallback = null;
+//                break;
+//            }
+//        }
+//
+//        camera.setParameters(parameters);
 
         mHolder = getHolder();
         mHolder.addCallback(this);

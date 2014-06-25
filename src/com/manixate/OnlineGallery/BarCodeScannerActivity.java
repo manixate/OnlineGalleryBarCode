@@ -75,7 +75,7 @@ class BarCodeScannerActivity extends Activity
         scanner.setConfig(0, Config.X_DENSITY, 3);
         scanner.setConfig(0, Config.Y_DENSITY, 3);
 
-        CameraPreview mPreview = new CameraPreview(this, mCamera, previewCb, null);
+        CameraPreview mPreview = new CameraPreview(this, mCamera, previewCb, autoFocusCB);
         mCameraPreview.addView(mPreview);
     }
 
