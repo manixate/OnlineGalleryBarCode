@@ -18,7 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -27,6 +28,8 @@ import java.util.List;
  */
 public class NetworkManager {
     private static final NetworkManager sharedNetworkManager = new NetworkManager();
+
+    private URL baseURL = null;
 
     private final AndroidHttpClient httpClient;
     private final BasicCookieStore cookieStore;
@@ -61,6 +64,24 @@ public class NetworkManager {
     public boolean isAuthenticated(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.COOKIE_PREF, Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(Constants.IS_AUTHENTICATED, false);
+    }
+
+    public URL getBaseURL(Context context) throws MalformedURLException {
+        if (this.baseURL == null) {
+            SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.COOKIE_PREF, Context.MODE_PRIVATE);
+            String baseURLString = sharedPreferences.getString(Constants.BASE_URL_PREF, Constants.DefaultBaseURL);
+
+            baseURL = new URL(baseURLString);
+        }
+
+        return baseURL;
+    }
+
+    public void setBaseURL(Context context, URL baseURL) {
+        this.baseURL = baseURL;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.COOKIE_PREF, Context.MODE_PRIVATE);
+        sharedPreferences.edit().putString(Constants.BASE_URL_PREF, this.baseURL.toString()).commit();
     }
 
     public static void unauthenticatedAccess(final Activity activity){

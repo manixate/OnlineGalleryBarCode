@@ -8,5 +8,6 @@
     <string name="scan">Scan And Upload</string>
     <string name="viewPhotos">View Photos</string>
     <string name="openScanner">Open Scanner</string>
+    <string name="serverAddress">Server Address</string>
     <string name="logout">Logout</string>
 </resources>

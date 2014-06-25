@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -25,7 +28,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,15 +137,30 @@ public class AuthenticationActivity extends Activity {
             String userName = strings[0];
             String password = strings[1];
 
+            String urlString;
+
             AndroidHttpClient httpClient = NetworkManager.getInstance().getHttpClient();
 
             HttpResponse httpResponse;
             HttpPost loginRequest;
 
             if (TaskType.SIGNUP == taskType)
-                loginRequest = new HttpPost(Constants.SignupURLString);
+                urlString = Constants.SignupURLString;
             else
-                loginRequest = new HttpPost(Constants.LoginURLString);
+                urlString = Constants.LoginURLString;
+
+            try {
+                URL url = new URL(NetworkManager.getInstance().getBaseURL(context), urlString);
+                loginRequest = new HttpPost(new URI(url.toString()));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            }
 
             List<NameValuePair> nameValuePairList = new ArrayList<NameValuePair>(2);
             nameValuePairList.add(new BasicNameValuePair("username", userName));
@@ -151,23 +172,20 @@ public class AuthenticationActivity extends Activity {
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
 
-                return null;
+                return "{success: false, message: " + e.getMessage() + " }";
             } catch (IOException e) {
                 e.printStackTrace();
 
-                return null;
+                return "{success: false, message: " + e.getMessage() + " }";
             }
 
-            if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                try {
-                    return EntityUtils.toString(httpResponse.getEntity());
-                } catch (IOException e) {
-                    e.printStackTrace();
+            try {
+                return EntityUtils.toString(httpResponse.getEntity());
+            } catch (IOException e) {
+                e.printStackTrace();
 
-                    return null;
-                }
+                return "{success: false, message: " + e.getMessage() + " }";
             }
-            return null;
         }
 
         @Override
@@ -175,10 +193,6 @@ public class AuthenticationActivity extends Activity {
             super.onPostExecute(s);
 
             progressDialog.dismiss();
-
-            if (s == null) {
-                return;
-            }
 
             try {
                 JSONObject result = new JSONObject(s);
@@ -192,7 +206,39 @@ public class AuthenticationActivity extends Activity {
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
+
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.logout).setVisible(false);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.logout:
+                NetworkManager.getInstance().clearCredentials(this);
+                NetworkManager.unauthenticatedAccess(this);
+                return true;
+            case R.id.serverAddress:
+                Constants.getServerAddress(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

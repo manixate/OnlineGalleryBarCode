@@ -1,6 +1,7 @@
 package com.manixate.OnlineGallery;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
@@ -31,6 +32,10 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 class BarCodeScannerActivity extends Activity
 {
@@ -146,7 +151,7 @@ class BarCodeScannerActivity extends Activity
                         yuvImage.compressToJpeg(new Rect(0, 0, size.width, size.height), 100, byteArrayOutputStream);
                         byte[] imageData = byteArrayOutputStream.toByteArray();
 
-                        new UploadPhotoTask(uploadProgressCb).execute(new Pair<String, byte[]>(barCode, imageData));
+                        new UploadPhotoTask(BarCodeScannerActivity.this, uploadProgressCb).execute(new Pair<String, byte[]>(barCode, imageData));
 
                         try {
                             byteArrayOutputStream.close();
@@ -179,9 +184,11 @@ class BarCodeScannerActivity extends Activity
     };
 
     class UploadPhotoTask extends AsyncTask<Pair<String, byte[]>, Void, String> {
+        final Context context;
         final UploadProgress uploadProgress;
 
-        public UploadPhotoTask(UploadProgress uploadProgress) {
+        public UploadPhotoTask(Context context, UploadProgress uploadProgress) {
+            this.context = context;
             this.uploadProgress = uploadProgress;
         }
 
@@ -192,14 +199,26 @@ class BarCodeScannerActivity extends Activity
 
         @Override
         protected String doInBackground(Pair<String, byte[]>... imageDatas) {
-            HttpPost httpPost = new HttpPost(Constants.PhotosURLString);
+            HttpPost httpPost;
+            try {
+                URL url = new URL(NetworkManager.getInstance().getBaseURL(context), Constants.PhotosURLString);
+                httpPost = new HttpPost(new URI(url.toString()));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            }
 
             AndroidHttpClient httpClient = NetworkManager.getInstance().getHttpClient();
 
             Pair<String, byte[]> imageData = imageDatas[0];
             byte[] jpegImageData = imageData.second;
             if (jpegImageData == null)
-                return null;
+                return "{success: false, message: Empty image }";
 
             MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
             multipartEntityBuilder.addBinaryBody("file", jpegImageData, ContentType.create("image/jpeg"), imageData.first);
@@ -210,25 +229,21 @@ class BarCodeScannerActivity extends Activity
             try {
                 HttpResponse httpResponse = httpClient.execute(httpPost, NetworkManager.getInstance().getHttpContext());
 
-                if (httpResponse.getStatusLine().getStatusCode() == 403) {
+                if (httpResponse.getStatusLine().getStatusCode() == 401) {
                     NetworkManager.unauthenticatedAccess(BarCodeScannerActivity.this);
-                    return null;
                 }
                 return EntityUtils.toString(httpResponse.getEntity());
 
             } catch (IOException e) {
                 e.printStackTrace();
 
-                return null;
+                return "{success: false, message: " + e.getMessage() + " }";
             }
         }
 
         @Override
         protected void onPostExecute(String s) {
             uploadProgress.onUploadCompleted();
-
-            if (s == null)
-                return;
 
             try {
                 JSONObject jsonObject = new JSONObject(s);

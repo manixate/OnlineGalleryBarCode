@@ -10,7 +10,10 @@ import android.os.Bundle;
 import android.util.LruCache;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.BaseAdapter;
+import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.Toast;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import com.manixate.OnlineGallery.Utils.NetworkManager;
@@ -24,6 +27,9 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -70,7 +76,7 @@ class ViewPhotosActivity extends Activity {
         return mMemoryCache.get(key);
     }
 
-    private class PhotosTask extends AsyncTask<Void, Void, ArrayList<URL>> {
+    private class PhotosTask extends AsyncTask<Void, Void, String> {
         final Context context;
 
         private PhotosTask(Context context) {
@@ -78,8 +84,20 @@ class ViewPhotosActivity extends Activity {
         }
 
         @Override
-        protected ArrayList<URL> doInBackground(Void... voids) {
-            HttpGet getRequest = new HttpGet(Constants.PhotosURLString);
+        protected String doInBackground(Void... voids) {
+            HttpGet getRequest;
+            try {
+                URL url = new URL(NetworkManager.getInstance().getBaseURL(context), Constants.PhotosURLString);
+                getRequest = new HttpGet(new URI(url.toString()));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            }
 
             AndroidHttpClient httpClient = NetworkManager.getInstance().getHttpClient();
 
@@ -89,10 +107,25 @@ class ViewPhotosActivity extends Activity {
                 String response = EntityUtils.toString(httpResponse.getEntity());
                 if (httpResponse.getStatusLine().getStatusCode() == 403) {
                     NetworkManager.unauthenticatedAccess(ViewPhotosActivity.this);
-                    return null;
                 }
 
-                JSONArray photoArray = new JSONObject(response).getJSONArray("message");
+                return response;
+            } catch (IOException e) {
+                e.printStackTrace();
+
+                return "{success: false, message: " + e.getMessage() + " }";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                JSONObject jsonObject = new JSONObject(result);
+                if (!jsonObject.getBoolean("success")) {
+                    Toast.makeText(context, jsonObject.getString("message"), Toast.LENGTH_LONG).show();
+                }
+
+                JSONArray photoArray = jsonObject.getJSONArray("message");
 
                 ArrayList<URL> photos = new ArrayList<URL>();
                 for (int i = 0; i < photoArray.length(); i++) {
@@ -102,25 +135,19 @@ class ViewPhotosActivity extends Activity {
                     photos.add(photoURL);
                 }
 
-                return photos;
-            } catch (IOException e) {
-                e.printStackTrace();
+                mPhotosAdapter.photosList = photos;
+                mPhotosAdapter.notifyDataSetChanged();
 
-                return null;
+                Toast.makeText(context, "Successfully fetched images", Toast.LENGTH_LONG).show();
             } catch (JSONException e) {
                 e.printStackTrace();
 
-                return null;
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
             }
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<URL> photosList) {
-            if (photosList == null)
-                return;
-
-            mPhotosAdapter.photosList = photosList;
-            mPhotosAdapter.notifyDataSetChanged();
         }
     }
 

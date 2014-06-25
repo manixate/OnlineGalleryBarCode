@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/logout" android:title="@string/logout" android:showAsAction="ifRoom">Logout</item>
+    <item android:id="@+id/serverAddress" android:title="@string/serverAddress" android:showAsAction="ifRoom" />
+    <item android:id="@+id/logout" android:title="@string/logout" android:showAsAction="ifRoom" />
 </menu>

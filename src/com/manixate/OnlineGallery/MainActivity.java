@@ -44,6 +44,9 @@ class MainActivity extends Activity {
                 NetworkManager.getInstance().clearCredentials(this);
                 NetworkManager.unauthenticatedAccess(this);
                 return true;
+            case R.id.serverAddress:
+                Constants.getServerAddress(this);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
